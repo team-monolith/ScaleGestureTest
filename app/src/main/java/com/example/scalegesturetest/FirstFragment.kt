@@ -24,18 +24,18 @@ class FirstFragment : Fragment() {
 
     var moveview: MoveView? = null //キャンバスリフレッシュ用インスタンス保持変数
 
-    lateinit var MAPDATA:Bitmap
+    lateinit var MAPDATA: Bitmap
 
-    data class COORDINATE(var X:Float?,var Y:Float?)
+    data class COORDINATE(var X: Float?, var Y: Float?)
 
 
     var scale: Float = 1F   //地図表示のスケール,1.5-3.0-4.5
 
-    var pos:COORDINATE=COORDINATE(0f,0f)
-    var log:COORDINATE=COORDINATE(0f,0f)
+    var pos: COORDINATE = COORDINATE(0f, 0f)
+    var log: COORDINATE = COORDINATE(0f, 0f)
 
-    var touchPointX:Float=0f
-    var touchPointY:Float=0f
+    var touchPointX: Float = 0f
+    var touchPointY: Float = 0f
 
 
     var size: Rect? = null  //画面サイズ取得用
@@ -61,7 +61,7 @@ class FirstFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        MAPDATA=CreateBitmap()
+        MAPDATA = CreateBitmap()
 
         HandlerDraw(moveview!!)
 
@@ -92,16 +92,16 @@ class FirstFragment : Fragment() {
     fun SystemRefresh() {
     }
 
-    fun CreateBitmap():Bitmap{
-        val output=Bitmap.createBitmap(5000,5000, Bitmap.Config.ARGB_8888)
-        val canvas=Canvas(output)
-        val paint=Paint()
+    fun CreateBitmap(): Bitmap {
+        val output = Bitmap.createBitmap(5000, 5000, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val paint = Paint()
 
-        for(y in 0..499){
-            for(x in 0..499){
-                val rect=Rect(x*10,y*10,x*10+10,y*10*10)
-                paint.color=Color.rgb(Random.nextInt(255),Random.nextInt(255),Random.nextInt(255))
-                canvas.drawRect(rect,paint)
+        for (y in 0..499) {
+            for (x in 0..499) {
+                val rect = Rect(x * 10, y * 10, x * 10 + 10, y * 10 * 10)
+                paint.color = Color.rgb(Random.nextInt(255), Random.nextInt(255), Random.nextInt(255))
+                canvas.drawRect(rect, paint)
             }
         }
         return output
@@ -123,12 +123,12 @@ class FirstFragment : Fragment() {
                     log.Y = event.y
                 }
                 event.action == MotionEvent.ACTION_MOVE -> {
-                    pos.X=pos.X!!+event.x-log.X!!
-                    pos.Y=pos.Y!!+event.y-log.Y!!
+                    pos.X = pos.X!! + event.x - log.X!!
+                    pos.Y = pos.Y!! + event.y - log.Y!!
                     log.X = event.x
                     log.Y = event.y
                 }
-                event.action==MotionEvent.ACTION_UP ->{
+                event.action == MotionEvent.ACTION_UP -> {
                 }
             }
         }
@@ -136,11 +136,11 @@ class FirstFragment : Fragment() {
         return true
     }
 
-    //タッチしている場所の座標が、canvas上のどこの座標なのかがわかればズームできる
-    fun CenterCoordinate(touch:COORDINATE):COORDINATE{
-        val x=-pos.X!!+size!!.width()/2
-        val y=-pos.Y!!+size!!.height()/2
-        return COORDINATE(x,y)
+    //タッチしている場所の座標が、canvas上のどこの座標なのかを返す
+    fun TouchCoordinate(touch: COORDINATE): COORDINATE {
+        val x = -pos.X!! + touch.X!!
+        val y = -pos.Y!! + touch.Y!!
+        return COORDINATE(x, y)
     }
 
     override fun onAttach(context: Context) {
@@ -188,29 +188,41 @@ class FirstFragment : Fragment() {
             super.onDraw(canvas)
 
 
-            val paint=Paint()
+            val paint = Paint()
 
+            //画面中心の座標を取得（仮置き）
+            val Center: COORDINATE = TouchCoordinate(COORDINATE(size!!.width() / 2f, size!!.height() / 2f))
+
+            paint.color = Color.parseColor("#FF0000")
+
+
+            //何も弄っていないキャンバスのデータを保存
             canvas!!.save()
 
-            canvas.translate(pos.X!!,pos.Y!!)
+            //地図の移動
+            canvas.translate(pos.X!!, pos.Y!!)
 
-            canvas.scale(scale,scale,CenterCoordinate(COORDINATE(0f,0f)).X!!,CenterCoordinate(COORDINATE(0f,0f)).Y!!)
+            //地図の拡大縮小
+            canvas.scale(scale, scale, Center.X!!,Center.Y!!)
 
-            canvas.drawBitmap(MAPDATA,0f,0f, paint)
+            //地図の描画
+            canvas.drawBitmap(MAPDATA, 0f, 0f, paint)
 
 
-            paint.color=Color.parseColor("#FF0000")
+            //画面中心の円を描画
+            canvas.drawCircle(Center.X!!, Center.Y!!, 50*(1/scale), paint)
 
-            canvas.drawCircle(CenterCoordinate(COORDINATE(0f,0f)).X!!,CenterCoordinate(COORDINATE(0f,0f)).Y!!,50f,paint)
-
+            //キャンバスの移動と拡大縮小をリセット
             canvas.restore()
 
+            //デバッグ用の文字サイズと色を設定
+            paint.textSize = 80f
+            paint.color = Color.parseColor("#FFFFFF")
 
-            paint.textSize=80f
-
-            paint.color=Color.parseColor("#FFFFFF")
-
-            canvas.drawText("S=$scale\t",0f,80f,paint)
+            //座標を描画（デバッグ用）
+            canvas.drawText("S=$scale", 0f, 80f, paint)
+            canvas.drawText("X=" + pos.X, 0f, 160f, paint)
+            canvas.drawText("y=" + pos.Y, 0f, 240f, paint)
         }
     }
 }
